@@ -1,0 +1,87 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(msnmm)
+```
+
+
+## Overview
+
+This vignette shows the wide-format data expected by `msnmm`, a quick start with `msnmm_fit()`, and full control with `msnmm_tv_pairs_min()`.
+
+## Simulated data (K = 2)
+
+```{r}
+N <- 2000; K <- 2
+dat <- data.frame(
+  S1_1 = rnorm(N), S2_1 = rnorm(N)
+)
+# simple treatment/outcome DGP
+dat$A_1 <- rbinom(N, 1, plogis(-0.2 + 0.5*dat$S1_1))
+dat$Y_0 <- rnorm(N, 0, 1)
+dat$Y_1 <- dat$Y_0 + 0.6*dat$A_1 + 0.4*dat$S2_1 + rnorm(N,0,1)
+
+dat$S1_2 <- 0.3*dat$S1_1 + rnorm(N)
+dat$S2_2 <- 0.2*dat$S2_1 + rnorm(N)
+dat$A_2 <- rbinom(N, 1, plogis(-0.1 + 0.4*dat$S1_2 + 0.3*dat$A_1))
+dat$Y_2 <- dat$Y_1 + 0.5*dat$A_2 + 0.3*dat$S2_2 + rnorm(N,0,1)
+
+# wide-ready: includes A_1,A_2 and Y_0,Y_1,Y_2 plus S*_* columns
+dat_w <- transform(dat,
+  diffs1 = Y_1 - Y_0,
+  diffs2 = Y_2 - Y_1
+)
+```
+
+Quick start with msnmm_fit()
+
+```{r}
+fit1 <- msnmm_fit(
+  data = dat_w, K = K, wide_ready = TRUE,
+  stems_outcome = c("S1","S2"),
+  stems_treat   = c("S1","S2"),
+  blip_template = c("intercept","S2_{t}"),
+  model = "glm",
+  initiation = FALSE
+)
+
+summary(fit1)
+
+```
+
+Full control (_min() + builders)
+
+```{r}
+# Build blips for all (m,k)
+blips <- build_blips_all_from_template(K, c("intercept","S2_{t}"))
+
+# Linear RHS for nuisances; swap to rhs_spline(df=5) to try splines
+outcome_fml <- build_outcome_formulas_min(K, stems = c("S1","S2"), rhs_builder = rhs_linear)
+treat_fml   <- build_treatment_formulas_min(K, stems = c("S1","S2"), rhs_builder = rhs_linear, include_pastA = TRUE)
+
+fit2 <- msnmm_tv_pairs_min(
+  data = dat_w, id = "id", ntimes = K, wide_ready = TRUE,
+  outcome_nuisance_formulas = outcome_fml,
+  treatment_nuisance_formulas = treat_fml,
+  blips = blips,
+  initiation = FALSE
+)
+
+summary(fit2)
+
+```
+
