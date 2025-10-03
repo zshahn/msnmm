@@ -1,0 +1,22 @@
+Package: msnmm
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Zachary", family = "Shahn",
+           email = "zachshahn@gmail.com",
+           role = c("aut","cre"))
+    person(given = "Meghana", family = "Shamsunder",
+           email = "meghana.shamsunder@sph.cuny.edu",
+           role = c("aut","cre"))
+Description: Fits a marginal Structural Mean Model under parallel trends assumptions.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    stats,
+    nleqslv,
+    dplyr,
+    rlang
+
