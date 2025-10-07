@@ -4,18 +4,18 @@
 \alias{fit_glm}
 \title{Fit a GLM (wrapper)}
 \usage{
-fit_glm(...)
+fit_glm(formula = NULL, family = gaussian(), vars = NULL)
 
-fit_glm(...)
+fit_glm(formula = NULL, family = gaussian(), vars = NULL)
 }
 \arguments{
-\item{data}{data.frame}
-
 \item{formula}{optional; if NULL, we build from vars}
 
 \item{family}{glm family}
 
 \item{vars}{character vector of column names}
+
+\item{data}{data.frame}
 }
 \value{
 a fitted "glm" object

@@ -4,9 +4,9 @@
 \alias{fit_xgboost}
 \title{Fit xgboost (simple recipe)}
 \usage{
-fit_xgboost(...)
+fit_xgboost(params = list(), nrounds = 200, vars = NULL)
 
-fit_xgboost(...)
+fit_xgboost(params = list(), nrounds = 200, vars = NULL)
 }
 \arguments{
 \item{params}{list passed to xgboost::xgb.train}

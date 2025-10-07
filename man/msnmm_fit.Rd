@@ -4,7 +4,27 @@
 \alias{msnmm_fit}
 \title{High-level SNMM fit with templates, ML backends, and cross-fitting}
 \usage{
-msnmm_fit(...)
+msnmm_fit(
+  data,
+  K,
+  id = NULL,
+  time = "yearms",
+  wide_ready = TRUE,
+  stems_outcome,
+  stems_treat,
+  blip_template = c("intercept", "S2_{t}"),
+  rhs_outcome = "linear",
+  rhs_treat = "linear",
+  df_outcome = 5,
+  df_treat = 5,
+  model = c("glm", "xgb", "sl"),
+  cf = FALSE,
+  folds = 2,
+  seed = NULL,
+  learners_outcome = c("SL.glm", "SL.ranger"),
+  learners_treat = c("SL.glm", "SL.ranger"),
+  initiation = FALSE
+)
 }
 \arguments{
 \item{data}{data.frame in wide format if wide_ready=TRUE; otherwise long}

@@ -4,9 +4,9 @@
 \alias{fit_superlearner}
 \title{Fit with SuperLearner (generic)}
 \usage{
-fit_superlearner(...)
+fit_superlearner(SL.library, family = gaussian(), vars = NULL)
 
-fit_superlearner(...)
+fit_superlearner(SL.library, family = gaussian(), vars = NULL)
 }
 \arguments{
 \item{SL.library}{character vector (e.g. c("SL.ranger","SL.xgboost"))}

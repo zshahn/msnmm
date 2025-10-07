@@ -4,7 +4,7 @@
 \alias{make_diffs}
 \title{Create diffs1..diffsK from wide Y_0..Y_K}
 \usage{
-make_diffs(...)
+make_diffs(dat, outcome = "Y", K)
 }
 \description{
 Create diffs1..diffsK from wide Y_0..Y_K

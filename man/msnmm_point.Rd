@@ -4,7 +4,23 @@
 \alias{msnmm_point}
 \title{Point-exposure marginal SNMM with cross-fitting}
 \usage{
-msnmm_point(...)
+msnmm_point(
+  data,
+  y0,
+  y1,
+  a,
+  L0,
+  Ltilde0,
+  blip = ~1,
+  q = "score",
+  nuisance = list(pi = fit_glm(vars = L0, family = binomial()), mu = fit_glm(vars = L0,
+    family = gaussian())),
+  folds = 2,
+  trim = 0,
+  solver = c("nleqslv", "oneshot")[1],
+  control = list(),
+  seed = NULL
+)
 }
 \arguments{
 \item{data}{data.frame with columns y0,y1,a and specified covariates}

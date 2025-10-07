@@ -4,7 +4,7 @@
 \alias{make_pastA}
 \title{Create pastA_2..pastA_K flags from A_1..A_K (ever-treated before time i)}
 \usage{
-make_pastA(...)
+make_pastA(dat, exposure = "A", K)
 }
 \description{
 pastA_i = 1 if any A_1..A_{i-1} == 1, else 0. This supports the

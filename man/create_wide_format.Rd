@@ -4,7 +4,7 @@
 \alias{create_wide_format}
 \title{Create wide-style lagged columns Y_t, A_t, and other time-varying vars}
 \usage{
-create_wide_format(...)
+create_wide_format(data, id, time_vars, max_timepoints)
 }
 \arguments{
 \item{time_vars}{character vector of columns to expand}
