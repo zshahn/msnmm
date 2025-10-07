@@ -4,7 +4,7 @@
 \alias{make_q}
 \title{Build a q-function from a formula (returns model matrix)}
 \usage{
-make_q(formula)
+make_q(...)
 }
 \description{
 Build a q-function from a formula (returns model matrix)

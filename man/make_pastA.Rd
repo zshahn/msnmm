@@ -4,7 +4,7 @@
 \alias{make_pastA}
 \title{Create past-treatment indicators (for "initiation" setups)}
 \usage{
-make_pastA(data, exposure, K)
+make_pastA(...)
 }
 \description{
 Create past-treatment indicators (for "initiation" setups)

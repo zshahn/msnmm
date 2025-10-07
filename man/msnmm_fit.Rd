@@ -4,25 +4,7 @@
 \alias{msnmm_fit}
 \title{Friendly front door to SNMM g-estimation}
 \usage{
-msnmm_fit(
-  data,
-  id = NULL,
-  K = NULL,
-  wide_ready = TRUE,
-  y_cols = NULL,
-  a_cols = NULL,
-  stems_outcome = NULL,
-  stems_treat = NULL,
-  blip_template = c("intercept", "S2_{t}"),
-  model = c("glm", "spline", "ml"),
-  df_spline = 5,
-  include_pastA = TRUE,
-  initiation = FALSE,
-  blips = NULL,
-  outcome_nuisance_formulas = NULL,
-  treatment_nuisance_formulas = NULL,
-  verbose = TRUE
-)
+msnmm_fit(...)
 }
 \description{
 Friendly front door to SNMM g-estimation

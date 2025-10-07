@@ -53,7 +53,11 @@ build_outcome_formulas_min <- function(K, stems, rhs_builder = rhs_linear, ...) 
   out
 }
 
+
+
 # Treatment formulas: A_i ~ RHS(time=i) (includes past A if builder added)
+#' @inheritParams build_outcome_formulas_min
+#' @param include_pastA logical; keep/remove past A terms (if builder adds them)
 #' @export
 build_treatment_formulas_min <- function(K, stems, rhs_builder = rhs_linear, include_pastA = TRUE, ...) {
   out <- vector("list", K)

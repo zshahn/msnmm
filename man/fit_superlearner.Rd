@@ -4,7 +4,7 @@
 \alias{fit_superlearner}
 \title{Specify a SuperLearner learner (nuisance)}
 \usage{
-fit_superlearner(SL.library, family = gaussian(), vars = NULL)
+fit_superlearner(...)
 }
 \description{
 Specify a SuperLearner learner (nuisance)

@@ -1,3 +1,6 @@
+# R/summary-print-coef.R
+
+# minimal summary for msnmm_pairs_fit
 summary.msnmm_pairs_fit <- function(object, ...) {
   est <- object$coef
   V   <- object$vcov
@@ -13,8 +16,4 @@ print.summary.msnmm_pairs_fit <- function(x, ...) {
   printCoefmat(x, P.values = TRUE, has.Pvalue = TRUE)
   invisible(x)
 }
-
-coef.msnmm_pairs_fit <- function(object, ...) object$coef
-
-vcov.msnmm_pairs_fit <- function(object, ...) object$vcov
 

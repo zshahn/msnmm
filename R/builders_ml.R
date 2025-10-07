@@ -1,6 +1,5 @@
 # ---- RHS helpers ---------------------------------------------------------
 
-#' @export
 rhs_linear <- function(stems, t, ...) {
   paste(c(
     sprintf("%s_%d", stems, t),
@@ -8,7 +7,6 @@ rhs_linear <- function(stems, t, ...) {
   ), collapse = " + ")
 }
 
-#' @export
 rhs_spline <- function(stems, t, df = 5, ...) {
   pieces <- c(sprintf("bs(%s_%d, df=%d)", stems, t, df))
   if (t > 1) pieces <- c(pieces, sprintf("A_%d", 1:(t-1)))
@@ -18,7 +16,6 @@ rhs_spline <- function(stems, t, df = 5, ...) {
 # ---- Outcome builders ----------------------------------------------------
 
 #' Build outcome nuisance formulas (minimal)
-#' @export
 build_outcome_formulas_min <- function(K, stems, rhs_builder = rhs_linear, ...) {
   out <- vector("list", K)
   for (i in 1:K) {
@@ -34,7 +31,6 @@ build_outcome_formulas_min <- function(K, stems, rhs_builder = rhs_linear, ...) 
 # ---- Treatment builders --------------------------------------------------
 
 #' Build treatment nuisance formulas (minimal)
-#' @export
 build_treatment_formulas_min <- function(K, stems, rhs_builder = rhs_linear, include_pastA = TRUE, ...) {
   out <- vector("list", K)
   for (i in 1:K) {
@@ -53,7 +49,6 @@ build_treatment_formulas_min <- function(K, stems, rhs_builder = rhs_linear, inc
 
 # ---- Blip template expander (for completeness) ---------------------------
 
-#' @export
 build_blips_all_from_template <- function(K, preds_template = c("intercept"), data_wide = NULL) {
   .ms_glue_mk <- function(x, m, k) {
     x <- gsub("\\{t\\}", as.character(m), x, perl = TRUE)

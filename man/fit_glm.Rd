@@ -4,7 +4,7 @@
 \alias{fit_glm}
 \title{Specify a GLM learner (nuisance)}
 \usage{
-fit_glm(formula = NULL, family = gaussian(), vars = NULL)
+fit_glm(...)
 }
 \arguments{
 \item{formula}{optional; if NULL, we build from vars}

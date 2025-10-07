@@ -4,7 +4,7 @@
 \alias{make_diffs}
 \title{Make diffs ΔY_{t+1} = Y_{t+1} - Y_t for t=0..K-1 (wide names)}
 \usage{
-make_diffs(data, outcome, K)
+make_diffs(...)
 }
 \description{
 Make diffs ΔY_{t+1} = Y_{t+1} - Y_t for t=0..K-1 (wide names)

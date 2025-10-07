@@ -1,10 +1,7 @@
-#' @export
 coef.msnmm_fit <- function(object, ...) object$coef
 
-#' @export
 vcov.msnmm_fit <- function(object, ...) object$vcov
 
-#' @export
 summary.msnmm_fit <- function(object, ...) {
   se <- sqrt(diag(object$vcov))
   z  <- object$coef / se

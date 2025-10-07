@@ -1,3 +1,13 @@
+#' Unified (m,k) SNMM g-estimation (minimal)
+#' @param data wide data
+#' @param id ignored when wide_ready=TRUE
+#' @param ntimes integer horizon
+#' @param outcome_nuisance_formulas list[[i]][[k-i+1]] of formulas
+#' @param treatment_nuisance_formulas list[[i]] of formulas
+#' @param blips list of blocks: list(m=,k=,preds=)
+#' @param initiation logical
+#' @return object of class \code{msnmm_pairs_fit}
+#' @export
 msnmm_tv_pairs_min <- function(
     data, id, time = "yearms", ntimes,
     exposure = "A", outcome = "Y",

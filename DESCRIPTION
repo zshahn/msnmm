@@ -2,8 +2,12 @@ Package: msnmm
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person("Zach", "Shahn", , "Zachary.Shahn@sph.cuny.edu", role = c("aut", "cre"))
-    person("Meghana", "Shamsunder", , "Meghana.Shamsunder@sph.cuny.edu", role = c("aut"))
+    person(given = "Zachary", family = "Shahn",
+           email = "zachshahn@gmail.com",
+           role = c("aut","cre"))
+    person(given = "Meghana", family = "Shamsunder",
+           email = "meghana.shamsunder@sph.cuny.edu",
+           role = c("aut","cre"))
 Description: Fits a marginal Structural Mean Model under parallel trends assumptions.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license

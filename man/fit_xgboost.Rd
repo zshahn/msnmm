@@ -4,7 +4,7 @@
 \alias{fit_xgboost}
 \title{Specify an xgboost learner (nuisance)}
 \usage{
-fit_xgboost(params = list(), nrounds = 200, vars = NULL)
+fit_xgboost(...)
 }
 \arguments{
 \item{params}{list passed to xgboost::xgb.train}
