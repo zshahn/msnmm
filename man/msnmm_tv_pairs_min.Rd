@@ -2,7 +2,7 @@
 % Please edit documentation in R/msnmm_tv_pairs_min.R
 \name{msnmm_tv_pairs_min}
 \alias{msnmm_tv_pairs_min}
-\title{Unified (m,k) SNMM g-estimation (minimal)}
+\title{Minimal unified (m,k) SNMM with optional ML + cross-fitting}
 \usage{
 msnmm_tv_pairs_min(
   data,
@@ -16,28 +16,29 @@ msnmm_tv_pairs_min(
   outcome_nuisance_formulas,
   treatment_nuisance_formulas,
   blips,
-  initiation = TRUE,
-  verbose = TRUE
+  initiation = FALSE,
+  verbose = TRUE,
+  model = c("glm", "xgb", "sl"),
+  cf = FALSE,
+  folds = 2,
+  seed = NULL,
+  learners_outcome = c("SL.glm", "SL.ranger"),
+  learners_treat = c("SL.glm", "SL.ranger")
 )
 }
 \arguments{
-\item{data}{wide data}
+\item{data, id, time, ntimes, ...}{same as before}
 
-\item{id}{ignored when wide_ready=TRUE}
+\item{model}{one of "glm","xgb","sl" (SuperLearner)}
 
-\item{ntimes}{integer horizon}
+\item{cf}{logical; if TRUE, K-fold cross-fitting for all nuisances}
 
-\item{outcome_nuisance_formulas}{list[\link{i}][\link{k-i+1}] of formulas}
+\item{folds}{integer; number of folds (default 2)}
 
-\item{treatment_nuisance_formulas}{list[\link{i}] of formulas}
+\item{seed}{optional integer for reproducible folds}
 
-\item{blips}{list of blocks: list(m=,k=,preds=)}
-
-\item{initiation}{logical}
-}
-\value{
-object of class \code{msnmm_pairs_fit}
+\item{learners_outcome, learners_treat}{used when model="sl"}
 }
 \description{
-Unified (m,k) SNMM g-estimation (minimal)
+Minimal unified (m,k) SNMM with optional ML + cross-fitting
 }

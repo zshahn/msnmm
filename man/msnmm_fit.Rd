@@ -2,10 +2,33 @@
 % Please edit documentation in R/msnmm_fit.R
 \name{msnmm_fit}
 \alias{msnmm_fit}
-\title{Friendly front door to SNMM g-estimation}
+\title{High-level SNMM fit with templates, ML backends, and cross-fitting}
 \usage{
 msnmm_fit(...)
 }
+\arguments{
+\item{data}{data.frame in wide format if wide_ready=TRUE; otherwise long}
+
+\item{K}{number of treatment times}
+
+\item{wide_ready}{logical}
+
+\item{stems_outcome}{character stems for outcome RHS builder ("S1","S2",...)}
+
+\item{stems_treat}{character stems for treatment RHS builder}
+
+\item{blip_template}{character, e.g. c("intercept","S2_{t}")}
+
+\item{rhs_outcome}{builder function or "linear"/"spline"}
+
+\item{rhs_treat}{builder function or "linear"/"spline"}
+
+\item{df_outcome, df_treat}{df for rhs_spline() if used}
+
+\item{model, cf, folds, seed, learners_outcome, learners_treat}{passed through}
+
+\item{initiation}{logical; see core}
+}
 \description{
-Friendly front door to SNMM g-estimation
+High-level SNMM fit with templates, ML backends, and cross-fitting
 }
