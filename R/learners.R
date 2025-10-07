@@ -46,17 +46,19 @@ ms_xgb_reg <- function(vars, nrounds = 300,
 }
 
 #' Fit a GLM (wrapper)
+#' Lightweight GLM wrapper that returns a predictor function
 #' @export
-fit_glm <- function(formula, data, family, weights = NULL, ...) {
+fit_glm <- function(formula, data, family,
+                    weights = NULL,
+                    vars = NULL,   # kept for backward-compat; ignored
+                    ...) {
   mod <- if (is.null(weights)) {
     stats::glm(formula = formula, data = data, family = family, ...)
   } else {
     stats::glm(formula = formula, data = data, family = family, weights = weights, ...)
   }
-  # Return a prediction closure
   function(newdata) {
-    type <- "response"  # works for gaussian (identity) and binomial (prob)
-    as.numeric(stats::predict(mod, newdata = newdata, type = type))
+    as.numeric(stats::predict(mod, newdata = newdata, type = "response"))
   }
 }
 
