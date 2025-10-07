@@ -46,14 +46,20 @@ ms_xgb_reg <- function(vars, nrounds = 300,
 }
 
 #' Fit a GLM (wrapper)
-#' @param formula model formula
-#' @param data    data.frame
-#' @param family  a GLM family, e.g. stats::binomial()
-#' @return a fitted "glm" object
 #' @export
-fit_glm <- function(formula, data, family) {
-  stats::glm(formula = formula, data = data, family = family)
+fit_glm <- function(formula, data, family, weights = NULL, ...) {
+  mod <- if (is.null(weights)) {
+    stats::glm(formula = formula, data = data, family = family, ...)
+  } else {
+    stats::glm(formula = formula, data = data, family = family, weights = weights, ...)
+  }
+  # Return a prediction closure
+  function(newdata) {
+    type <- "response"  # works for gaussian (identity) and binomial (prob)
+    as.numeric(stats::predict(mod, newdata = newdata, type = type))
+  }
 }
+
 
 
 #' Fit with SuperLearner (generic)

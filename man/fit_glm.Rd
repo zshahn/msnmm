@@ -14,11 +14,6 @@ fit_glm(formula = NULL, family = gaussian(), vars = NULL)
 \item{family}{glm family}
 
 \item{vars}{character vector of column names}
-
-\item{data}{data.frame}
-}
-\value{
-a fitted "glm" object
 }
 \description{
 Fit a GLM (wrapper)
