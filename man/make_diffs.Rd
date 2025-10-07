@@ -2,10 +2,10 @@
 % Please edit documentation in R/data_helpers.R
 \name{make_diffs}
 \alias{make_diffs}
-\title{Make diffs ΔY_{t+1} = Y_{t+1} - Y_t for t=0..K-1 (wide names)}
+\title{Create diffs1..diffsK from wide Y_0..Y_K}
 \usage{
 make_diffs(...)
 }
 \description{
-Make diffs ΔY_{t+1} = Y_{t+1} - Y_t for t=0..K-1 (wide names)
+Create diffs1..diffsK from wide Y_0..Y_K
 }
