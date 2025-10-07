@@ -2,21 +2,26 @@
 % Please edit documentation in R/learners.R, R/nuisance.R
 \name{fit_glm}
 \alias{fit_glm}
-\title{Fit a GLM (baseline)}
+\title{Fit a GLM (wrapper)}
 \usage{
 fit_glm(...)
 
 fit_glm(...)
 }
 \arguments{
+\item{data}{data.frame}
+
 \item{formula}{optional; if NULL, we build from vars}
 
 \item{family}{glm family}
 
 \item{vars}{character vector of column names}
 }
+\value{
+a fitted "glm" object
+}
 \description{
-Fit a GLM (baseline)
+Fit a GLM (wrapper)
 
 Specify a GLM learner (nuisance)
 }

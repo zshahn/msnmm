@@ -45,11 +45,16 @@ ms_xgb_reg <- function(vars, nrounds = 300,
   ), class = "ms_learner")
 }
 
-#' Fit a GLM (baseline)
+#' Fit a GLM (wrapper)
+#' @param formula model formula
+#' @param data    data.frame
+#' @param family  a GLM family, e.g. stats::binomial()
+#' @return a fitted "glm" object
 #' @export
 fit_glm <- function(formula, data, family) {
-  stats::glm(formula, data = data, family = family)
+  stats::glm(formula = formula, data = data, family = family)
 }
+
 
 #' Fit with SuperLearner (generic)
 #' @param SL.library character vector (e.g. c("SL.ranger","SL.xgboost"))
