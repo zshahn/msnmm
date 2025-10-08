@@ -19,4 +19,6 @@ Imports:
     nleqslv,
     dplyr,
     rlang
+Suggests:
+    SuperLearner
 

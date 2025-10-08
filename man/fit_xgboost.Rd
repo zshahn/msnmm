@@ -2,10 +2,24 @@
 % Please edit documentation in R/learners.R
 \name{fit_xgboost}
 \alias{fit_xgboost}
-\title{Fit xgboost (simple recipe)}
+\title{Fit xgboost (simple recipe)
+Internal: XGBoost learner (formula interface)
+Accepts family either as character ("gaussian"/"binomial") or as a stats::family object.
+Returns a list with $predict(newdata) -> numeric vector (response scale).}
 \usage{
-fit_xgboost(formula, data, family, nrounds = 100, params = list(), ...)
+fit_xgboost(
+  formula,
+  data,
+  family = "gaussian",
+  nrounds = 200,
+  params = list(),
+  ...
+)
 }
 \description{
 Fit xgboost (simple recipe)
+Internal: XGBoost learner (formula interface)
+Accepts family either as character ("gaussian"/"binomial") or as a stats::family object.
+Returns a list with $predict(newdata) -> numeric vector (response scale).
 }
+\keyword{internal}

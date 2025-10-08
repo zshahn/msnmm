@@ -5,7 +5,7 @@
 \title{Fit a GLM (wrapper)
 Lightweight GLM wrapper that returns a predictor function}
 \usage{
-fit_glm(formula, data, family, weights = NULL, vars = NULL, ...)
+fit_glm(formula, data, family = gaussian(), ...)
 }
 \description{
 Fit a GLM (wrapper)

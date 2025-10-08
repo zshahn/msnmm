@@ -48,52 +48,140 @@ ms_xgb_reg <- function(vars, nrounds = 300,
 #' Fit a GLM (wrapper)
 #' Lightweight GLM wrapper that returns a predictor function
 #' @export
-fit_glm <- function(formula, data, family,
-                    weights = NULL,
-                    vars = NULL,   # kept for backward-compat; ignored
-                    ...) {
-  mod <- if (is.null(weights)) {
-    stats::glm(formula = formula, data = data, family = family, ...)
-  } else {
-    stats::glm(formula = formula, data = data, family = family, weights = weights, ...)
-  }
-  function(newdata) {
-    as.numeric(stats::predict(mod, newdata = newdata, type = "response"))
-  }
+fit_glm <- function(formula, data, family = gaussian(), ...) {
+  fit <- stats::glm(formula, data = data, family = family, ...)
+  list(
+    fit = fit,
+    predict = function(newdata, type = NULL) {
+      # default type: response for both gaussian and binomial
+      t <- if (!is.null(type)) type else "response"
+      as.numeric(stats::predict(fit, newdata = newdata, type = t))
+    }
+  )
 }
+
 
 
 
 #' Fit with SuperLearner (generic)
 #' @param SL.library character vector (e.g. c("SL.ranger","SL.xgboost"))
 #' @export
-fit_superlearner <- function(formula, data, family, SL.library, ...) {
-  stopifnot(requireNamespace("SuperLearner", quietly = TRUE))
-  mf <- stats::model.frame(formula, data = data)
-  y  <- stats::model.response(mf)
-  x  <- mf[, setdiff(colnames(mf), all.vars(stats::terms(stats::update(formula, . ~ . -1)))) , drop = FALSE] # robust-ish
-  x  <- mf[, setdiff(colnames(mf), as.character(formula[[2]])), drop = FALSE]
-  SuperLearner::SuperLearner(Y = y, X = x, SL.library = SL.library,
-                             family = if (identical(family$family, "binomial")) stats::binomial() else gaussian(),
-                             ...)
+# SuperLearner wrapper: formula -> design matrix, train SL, return predict() closure
+fit_superlearner <- function(formula, data, family = gaussian(),
+                             learners = c("SL.glm","SL.ranger"), ...) {
+  # Build model frame & design matrix
+  mf  <- stats::model.frame(formula = formula, data = data, drop.unused.levels = TRUE)
+  trm <- stats::terms(mf)
+  X   <- stats::model.matrix(trm, mf)
+  Y   <- stats::model.response(mf)
+
+  # 1) DROP INTERCEPT (ranger hates "(Intercept)" in data)
+  if (ncol(X) && "(Intercept)" %in% colnames(X)) {
+    X <- X[, setdiff(colnames(X), "(Intercept)"), drop = FALSE]
+  }
+
+  # 2) SANITIZE COLUMN NAMES (make syntactically valid)
+  safe_train <- make.names(colnames(X), unique = TRUE, allow_ = TRUE)
+  colnames(X) <- safe_train
+
+  # 3) Fit SL on safe, intercept-free X
+  sl_fit <- SuperLearner::SuperLearner(
+    Y          = Y,
+    X          = as.data.frame(X),
+    family     = family,
+    SL.library = learners
+  )
+
+  # 4) Return a predictor that repeats the exact same steps
+  list(
+    model = sl_fit,
+    terms = trm,
+    safe_names = safe_train,
+    predict = function(newdata, type = NULL) {
+      mf_new <- stats::model.frame(trm, data = newdata, drop.unused.levels = TRUE)
+      Xnew   <- stats::model.matrix(trm, mf_new)
+
+      # drop intercept at predict time too
+      if (ncol(Xnew) && "(Intercept)" %in% colnames(Xnew)) {
+        Xnew <- Xnew[, setdiff(colnames(Xnew), "(Intercept)"), drop = FALSE]
+      }
+
+      # sanitize & align columns to training cols
+      colnames(Xnew) <- make.names(colnames(Xnew), unique = TRUE, allow_ = TRUE)
+      missing_cols <- setdiff(safe_train, colnames(Xnew))
+      if (length(missing_cols)) {
+        Xnew <- cbind(
+          Xnew,
+          matrix(0, nrow(Xnew), length(missing_cols), dimnames = list(NULL, missing_cols))
+        )
+      }
+      Xnew <- Xnew[, safe_train, drop = FALSE]
+
+      as.numeric(SuperLearner::predict.SuperLearner(
+        sl_fit, newdata = as.data.frame(Xnew)
+      )$pred)
+    }
+  )
 }
 
+
+
+
 #' Fit xgboost (simple recipe)
-#' @export
-fit_xgboost <- function(formula, data, family, nrounds = 100, params = list(), ...) {
-  stopifnot(requireNamespace("xgboost", quietly = TRUE))
-  mf <- stats::model.frame(formula, data = data)
-  y  <- stats::model.response(mf)
-  X  <- model.matrix(stats::terms(formula), data = data)
-  if (identical(family$family, "binomial")) {
-    params <- utils::modifyList(list(objective = "binary:logistic", eval_metric = "logloss"), params)
+#' Internal: XGBoost learner (formula interface)
+#' Accepts family either as character ("gaussian"/"binomial") or as a stats::family object.
+#' Returns a list with $predict(newdata) -> numeric vector (response scale).
+#' @keywords internal
+fit_xgboost <- function(formula, data, family = "gaussian",
+                        nrounds = 200,
+                        params = list(),
+                        ...) {
+
+  # ---- normalize family to a character name ----
+  fam_name <- if (is.character(family)) {
+    tolower(family)
+  } else if (is.list(family) && !is.null(family$family)) {
+    tolower(family$family)
   } else {
-    params <- utils::modifyList(list(objective = "reg:squarederror"), params)
+    stop("fit_xgboost(): 'family' must be \"gaussian\"/\"binomial\" or a stats::family object.")
   }
-  m <- xgboost::xgboost(data = xgboost::xgb.DMatrix(X, label = y),
-                        params = params, nrounds = nrounds, verbose = 0)
-  structure(list(model = m, x_cols = colnames(X), family = family),
-            class = "xgb_fit")
+  if (!fam_name %in% c("gaussian","binomial")) {
+    stop("fit_xgboost(): unsupported family: ", fam_name)
+  }
+
+  # ---- model.frame / design matrices ----
+  mf <- stats::model.frame(formula, data = data, drop.unused.levels = TRUE)
+  y  <- model.response(mf)
+  X  <- stats::model.matrix(stats::delete.response(stats::terms(mf)), data = mf)
+
+  # ---- default params by family ----
+  if (fam_name == "gaussian") {
+    params_default <- list(objective = "reg:squarederror", eval_metric = "rmse", eta = 0.1, max_depth = 6)
+  } else {
+    params_default <- list(objective = "binary:logistic",  eval_metric = "logloss", eta = 0.1, max_depth = 6)
+  }
+  # user params override defaults
+  params <- utils::modifyList(params_default, params, keep.null = TRUE)
+
+  # ---- train ----
+  dtr <- xgboost::xgb.DMatrix(data = X, label = y)
+  bst <- xgboost::xgb.train(
+    params  = params,
+    data    = dtr,
+    nrounds = nrounds,
+    verbose = 0
+  )
+
+  # ---- return predict wrapper on response scale ----
+  pred_fun <- function(newdata) {
+    mf_new <- stats::model.frame(stats::terms(mf), data = newdata, drop.unused.levels = TRUE)
+    X_new  <- stats::model.matrix(stats::delete.response(stats::terms(mf)), data = mf_new)
+    pr     <- stats::predict(bst, newdata = X_new)
+    # gaussian: already on response; binomial: already probability due to objective
+    as.numeric(pr)
+  }
+
+  list(predict = pred_fun)
 }
 
 # Predictors for wrappers
@@ -105,10 +193,5 @@ predict.xgb_fit <- function(object, newdata, type = "response", ...) {
   p
 }
 
-#' @export
-predict.SuperLearner <- function(object, newdata, type = "response", ...) {
-  pr <- stats::predict(object, newdata = newdata)$pred
-  if (!is.null(dim(pr))) pr <- as.numeric(pr)
-  pr
-}
+
 

@@ -75,32 +75,47 @@ msnmm_tv_pairs_min <- function(
     dat[[paste0("preds", i+1, "_", i)]] <- dat[[paste0("diffs", i)]]
   }
 
-  fit_and_predict_outcome <- function(formula, i, k, te_rows) {
-    # fit only on (A_i==0) AND (no past A for initiation settings when relevant)
+  fit_and_predict_outcome <- function(formula, i, k, te_rows = NULL) {
+    # rows: A_i == 0 (and also no past A if doing initiation-style conditioning)
     base_fit <- dat[[paste0(exposure, "_", i)]] == 0
-    # (no extra filter here; that's already the structural conditioning)
+    if (isTRUE(initiation) && i > 1) {
+      base_fit <- base_fit & (dat[[paste0("past", exposure, "_", i)]] == 0)
+    }
     df_fit <- dat[base_fit, , drop = FALSE]
     if (nrow(df_fit) == 0L) {
       stop("No rows to fit outcome nuisance at (i=", i, ", k=", k, ").")
     }
 
+    # >>> KEY CHANGE: ignore builder's LHS, refit with diffs{k} on the LHS
+    tt  <- terms(formula)                    # keep the builder’s RHS intact
+    rhs <- attr(tt, "term.labels")
+    off <- attr(tt, "offset")
+    has_off <- !is.null(off) && length(off) > 0
+    rhs_str <- if (length(rhs)) paste(rhs, collapse = " + ") else "1"
+    if (has_off) rhs_str <- paste(rhs_str,
+                                  paste(sprintf("offset(%s)", off), collapse=" + "),
+                                  sep = " + ")
+    form_diffs <- stats::as.formula(
+      sprintf("diffs%d ~ %s", k, rhs_str)
+    )
+
     fam <- gaussian()
 
-    # choose backend
+    # no-CF branch
     if (!isTRUE(cf)) {
       if (model == "glm") {
-        mod <- fit_glm(formula, data = df_fit, family = fam)
+        mod <- fit_glm(form_diffs, data = df_fit, family = fam)
         pred_fun <- .as_predictor(mod)
-        dat[[paste0("preds", i, "_", k)]] <- pred_fun(dat)
+        dat[[paste0("preds", i, "_", k)]] <<- pred_fun(dat)
       } else if (model == "xgb") {
-        mod <- fit_xgboost(formula, data = df_fit, family = "gaussian")
+        mod <- fit_xgboost(form_diffs, data = df_fit, family = "gaussian")
         pred_fun <- .as_predictor(mod)
-        dat[[paste0("preds", i, "_", k)]] <- pred_fun(dat)
+        dat[[paste0("preds", i, "_", k)]] <<- pred_fun(dat)
       } else { # "sl"
-        mod <- fit_superlearner(formula, data = df_fit, family = fam,
+        mod <- fit_superlearner(form_diffs, data = df_fit, family = fam,
                                 learners = learners_outcome)
         pred_fun <- .as_predictor(mod)
-        dat[[paste0("preds", i, "_", k)]] <- pred_fun(dat)
+        dat[[paste0("preds", i, "_", k)]] <<- pred_fun(dat)
       }
       return(invisible(NULL))
     }
@@ -108,27 +123,29 @@ msnmm_tv_pairs_min <- function(
     # cross-fitting branch
     pred_all <- numeric(nrow(dat))
     for (s in 1:folds) {
-      tr <- fold_id != s
-      te <- fold_id == s
+      tr <- (fold_id != s)
+      te <- (fold_id == s)
 
-      # training rows must also satisfy A_i==0
-      tr_rows <- which(tr & (dat[[paste0(exposure, "_", i)]] == 0))
+      tr_rows <- which(tr & base_fit)  # must satisfy the A_i==0 (+ no-past if set) constraint
       df_tr <- dat[tr_rows, , drop = FALSE]
       if (nrow(df_tr) == 0L) next
 
       if (model == "glm") {
-        mod <- fit_glm(formula, data = df_tr, family = fam)
+        mod <- fit_glm(form_diffs, data = df_tr, family = fam)
+        pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE]))
       } else if (model == "xgb") {
-        mod <- fit_xgboost(formula, data = df_tr, family = "gaussian")
+        mod <- fit_xgboost(form_diffs, data = df_tr, family = "gaussian")
+        pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE]))
       } else {
-        mod <- fit_superlearner(formula, data = df_tr, family = fam,
+        mod <- fit_superlearner(form_diffs, data = df_tr, family = fam,
                                 learners = learners_outcome)
+        pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE]))
       }
-      pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE]))
     }
     dat[[paste0("preds", i, "_", k)]] <<- pred_all
     invisible(NULL)
   }
+
 
   for (k in ntimes:1) {
     for (i in k:1) {
@@ -138,8 +155,10 @@ msnmm_tv_pairs_min <- function(
   }
 
   # ------------------ 3) Treatment nuisances: A_i -------------------------
-  fit_and_predict_treat <- function(formula, i) {
+  # returns a numeric vector of length nrow(dat) for A_i_hat in [0,1]
+  fit_and_predict_treat_vec <- function(formula, i) {
     fam <- binomial()
+
     # for initiation analyses, fit on "no past treatment" rows
     if (isTRUE(initiation) && i > 1) {
       fit_rows <- which(!dat[[paste0("past", exposure, "_", i)]])
@@ -151,48 +170,51 @@ msnmm_tv_pairs_min <- function(
       if (model == "glm") {
         mod <- fit_glm(formula, data = dat[fit_rows, , drop = FALSE], family = fam)
         pred_fun <- .as_predictor(mod)
-        dat[[paste0("A_", i, "_hat")]] <- pred_fun(dat)
+        return(as.numeric(pred_fun(dat)))
       } else if (model == "xgb") {
         mod <- fit_xgboost(formula, data = dat[fit_rows, , drop = FALSE], family = "binomial")
         pred_fun <- .as_predictor(mod)
-        dat[[paste0("A_", i, "_hat")]] <- pred_fun(dat)
+        return(as.numeric(pred_fun(dat)))
       } else {
         mod <- fit_superlearner(formula, data = dat[fit_rows, , drop = FALSE], family = fam,
                                 learners = learners_treat)
         pred_fun <- .as_predictor(mod)
-        dat[[paste0("A_", i, "_hat")]] <- pred_fun(dat)
+        return(as.numeric(pred_fun(dat)))
       }
-      return(invisible(NULL))
     }
 
-    # cross-fitting branch
+    # cross-fitting
     pred_all <- numeric(nrow(dat))
     for (s in 1:folds) {
-      tr <- (fold_id != s)
       te <- (fold_id == s)
-
+      tr <- (fold_id != s)
       tr_rows <- intersect(which(tr), fit_rows)
-      df_tr <- dat[tr_rows, , drop = FALSE]
-      if (nrow(df_tr) == 0L) next
+      if (!length(tr_rows)) next
 
       if (model == "glm") {
-        mod <- fit_glm(formula, data = df_tr, family = fam)
+        mod <- fit_glm(formula, data = dat[tr_rows, , drop = FALSE], family = fam)
         pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE], type = "response"))
       } else if (model == "xgb") {
-        mod <- fit_xgboost(formula, data = df_tr, family = "binomial")
+        mod <- fit_xgboost(formula, data = dat[tr_rows, , drop = FALSE], family = "binomial")
         pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE]))
       } else {
-        mod <- fit_superlearner(formula, data = df_tr, family = fam,
+        mod <- fit_superlearner(formula, data = dat[tr_rows, , drop = FALSE], family = fam,
                                 learners = learners_treat)
         pred_all[te] <- as.numeric(mod$predict(dat[te, , drop = FALSE]))
       }
     }
-    dat[[paste0(exposure, "_", i, "_hat")]] <<- pred_all
-    invisible(NULL)
+    pred_all
   }
 
   for (i in 1:ntimes) {
-    fit_and_predict_treat(treatment_nuisance_formulas[[i]], i)
+    vec <- fit_and_predict_treat_vec(treatment_nuisance_formulas[[i]], i)
+    nm  <- paste0("A_", i, "_hat")
+    if (length(vec) != nrow(dat) || !is.numeric(vec) || any(!is.finite(vec))) {
+      stop("Bad treatment prediction for ", nm, " (length/NA).")
+    }
+    # optional clipping to stabilize weights
+    vec <- pmin(pmax(vec, 1e-6), 1 - 1e-6)
+    dat[[nm]] <- vec
   }
 
   # if initiation: zero out predicted treatment after first treatment
@@ -203,7 +225,20 @@ msnmm_tv_pairs_min <- function(
     }
   }
 
+
   # ------------------ 4) Weights and term2 -------------------------------
+  # Guard that all A_i_hat exist and are the right size
+  for (i in 1:ntimes) {
+    nm <- paste0(exposure, "_", i, "_hat")
+    if (!nm %in% names(dat)) {
+      stop("Missing nuisance column ", nm, " — treatment nuisance was not computed.")
+    }
+    if (length(dat[[nm]]) != nrow(dat)) {
+      stop("Column ", nm, " has length ", length(dat[[nm]]), " but expected ", nrow(dat),
+           ". This would create length-0 weight factors.")
+    }
+  }
+
   for (i in 1:ntimes) {
     dat[[paste0("weightfactor_", i)]] <-
       (1 - dat[[paste0(exposure, "_", i)]]) / (1 - dat[[paste0(exposure, "_", i, "_hat")]])

@@ -4,7 +4,13 @@
 \alias{fit_superlearner}
 \title{Fit with SuperLearner (generic)}
 \usage{
-fit_superlearner(formula, data, family, SL.library, ...)
+fit_superlearner(
+  formula,
+  data,
+  family = gaussian(),
+  learners = c("SL.glm", "SL.ranger"),
+  ...
+)
 }
 \arguments{
 \item{SL.library}{character vector (e.g. c("SL.ranger","SL.xgboost"))}
