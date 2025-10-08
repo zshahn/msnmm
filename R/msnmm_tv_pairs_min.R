@@ -1,12 +1,10 @@
 #' Minimal unified (m,k) SNMM with optional ML + cross-fitting
-#'
 #' @param data,id,time,ntimes,... same as before
 #' @param model one of "glm","xgb","sl" (SuperLearner)
 #' @param cf logical; if TRUE, K-fold cross-fitting for all nuisances
 #' @param folds integer; number of folds (default 2)
 #' @param seed optional integer for reproducible folds
 #' @param learners_outcome,learners_treat used when model="sl"
-#'
 #' @export
 msnmm_tv_pairs_min <- function(
     data,
@@ -30,7 +28,6 @@ msnmm_tv_pairs_min <- function(
 ){
   model <- match.arg(model)
   dat <- data
-
   # ---- helpers (use your exported helpers when available) ----------------
   if (!all(paste0("diffs", 1:ntimes) %in% names(dat))) {
     dat <- make_diffs(dat, outcome = outcome, K = ntimes)   # exported helper
@@ -46,7 +43,11 @@ msnmm_tv_pairs_min <- function(
     )
     dat <- dat[dat[[time]] == 1, , drop = FALSE]
   }
-
+  .as_predictor <- function(obj) {
+    if (is.function(obj)) return(obj)
+    if (!is.null(obj$predict) && is.function(obj$predict)) return(obj$predict)
+    stop("Learner did not return a function or a list with $predict().")
+  }
   # if "first treatment only": set future A_i = 0 (data coding only)
   if (isTRUE(initiation)) {
     for (i in 2:ntimes) {
@@ -89,16 +90,18 @@ msnmm_tv_pairs_min <- function(
     if (!isTRUE(cf)) {
       if (model == "glm") {
         mod <- fit_glm(formula, data = df_fit, family = fam)
-        pred <- mod$predict(dat)
+        pred_fun <- .as_predictor(mod)
+        dat[[paste0("preds", i, "_", k)]] <- pred_fun(dat)
       } else if (model == "xgb") {
         mod <- fit_xgboost(formula, data = df_fit, family = "gaussian")
-        pred <- mod$predict(dat)
+        pred_fun <- .as_predictor(mod)
+        dat[[paste0("preds", i, "_", k)]] <- pred_fun(dat)
       } else { # "sl"
         mod <- fit_superlearner(formula, data = df_fit, family = fam,
                                 learners = learners_outcome)
-        pred <- mod$predict(dat)
+        pred_fun <- .as_predictor(mod)
+        dat[[paste0("preds", i, "_", k)]] <- pred_fun(dat)
       }
-      dat[[paste0("preds", i, "_", k)]] <<- as.numeric(pred)
       return(invisible(NULL))
     }
 
@@ -147,16 +150,18 @@ msnmm_tv_pairs_min <- function(
     if (!isTRUE(cf)) {
       if (model == "glm") {
         mod <- fit_glm(formula, data = dat[fit_rows, , drop = FALSE], family = fam)
-        pred <- mod$predict(dat, type = "response")
+        pred_fun <- .as_predictor(mod)
+        dat[[paste0("A_", i, "_hat")]] <- pred_fun(dat)
       } else if (model == "xgb") {
         mod <- fit_xgboost(formula, data = dat[fit_rows, , drop = FALSE], family = "binomial")
-        pred <- mod$predict(dat)
+        pred_fun <- .as_predictor(mod)
+        dat[[paste0("A_", i, "_hat")]] <- pred_fun(dat)
       } else {
         mod <- fit_superlearner(formula, data = dat[fit_rows, , drop = FALSE], family = fam,
                                 learners = learners_treat)
-        pred <- mod$predict(dat)
+        pred_fun <- .as_predictor(mod)
+        dat[[paste0("A_", i, "_hat")]] <- pred_fun(dat)
       }
-      dat[[paste0(exposure, "_", i, "_hat")]] <<- as.numeric(pred)
       return(invisible(NULL))
     }
 
