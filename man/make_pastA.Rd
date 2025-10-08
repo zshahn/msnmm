@@ -2,10 +2,11 @@
 % Please edit documentation in R/data_helpers.R
 \name{make_pastA}
 \alias{make_pastA}
-\title{Create past-treatment indicators (for "initiation" setups)}
+\title{Create pastA_2..pastA_K flags from A_1..A_K (ever-treated before time i)}
 \usage{
-make_pastA(...)
+make_pastA(dat, exposure = "A", K)
 }
 \description{
-Create past-treatment indicators (for "initiation" setups)
+pastA_i = 1 if any A_1..A_{i-1} == 1, else 0. This supports the
+"no-past-A rows" filtering you use in the outcome nuisance regressions.
 }

@@ -4,7 +4,23 @@
 \alias{msnmm_tv2}
 \title{Two-time (K=2) marginal SNMM with cross-fitting}
 \usage{
-msnmm_tv2(...)
+msnmm_tv2(
+  data,
+  y = c("Y0", "Y1", "Y2"),
+  a = c("A0", "A1"),
+  L = list(L0 = NULL, L1 = NULL),
+  Ltilde = list(L0 = NULL, L1 = NULL),
+  blip = list(g01 = ~1, g12 = ~1, g02 = ~1),
+  q = "score",
+  nuisance = list(pi0 = fit_glm(vars = L$L0, family = binomial()), pi1 = fit_glm(vars =
+    c(L$L1, a[1]), family = binomial()), mu01 = fit_glm(vars = L$L0, family =
+    gaussian()), mu12 = fit_glm(vars = c(L$L1, a[1]), family = gaussian())),
+  folds = 2,
+  trim = 0,
+  solver = "nleqslv",
+  control = list(),
+  seed = NULL
+)
 }
 \description{
 Two-time (K=2) marginal SNMM with cross-fitting
